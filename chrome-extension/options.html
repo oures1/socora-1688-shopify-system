@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>設定 - SOCORA 商品登録ツール</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: #0f0f0f; color: #e8e8e8;
+      min-height: 100vh; display: flex; align-items: flex-start;
+      justify-content: center; padding: 40px 20px;
+    }
+    .container { width: 520px; }
+    h1 { font-size: 18px; font-weight: 600; margin-bottom: 6px; color: #fff; }
+    .subtitle { font-size: 12px; color: #666; margin-bottom: 28px; }
+    .card {
+      background: #1a1a1a; border: 1px solid #2a2a2a;
+      border-radius: 12px; padding: 24px; margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 10px; color: #555; text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 16px; font-weight: 600;
+    }
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 12px; color: #aaa; margin-bottom: 6px; }
+    input, textarea {
+      width: 100%; background: #111; border: 1px solid #333;
+      border-radius: 8px; color: #e8e8e8; font-size: 13px;
+      padding: 10px 12px; outline: none; transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus { border-color: #555; }
+    .hint { font-size: 11px; color: #555; margin-top: 5px; line-height: 1.5; }
+    .hint a { color: #888; }
+    .session-box {
+      background: #0a2010; border: 1px solid #1a4020;
+      border-radius: 8px; padding: 14px; margin-bottom: 16px;
+    }
+    .session-title { font-size: 12px; color: #4ade80; font-weight: 600; margin-bottom: 6px; }
+    .session-desc { font-size: 11px; color: #666; line-height: 1.5; }
+    .btn {
+      width: 100%; padding: 12px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: background 0.2s; font-family: inherit;
+    }
+    .btn-check { background: #1a3a1a; color: #4ade80; border: 1px solid #2a5a2a; margin-bottom: 8px; }
+    .btn-check:hover { background: #1f4a1f; }
+    .btn-save { background: #e8e8e8; color: #111; margin-top: 4px; }
+    .btn-save:hover { background: #fff; }
+    .status {
+      text-align: center; font-size: 13px; margin-top: 12px;
+      padding: 8px; border-radius: 6px; display: none;
+    }
+    .status.ok { background: #1a3a1a; color: #4caf50; display: block; }
+    .status.err { background: #3a1a1a; color: #f44336; display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>設定</h1>
+    <p class="subtitle">SOCORA 商品登録ツール</p>
+
+    <!-- Shopify設定 -->
+    <div class="card">
+      <div class="session-box">
+        <div class="session-title">Shopify APIトークン不要</div>
+        <div class="session-desc">
+          Chromeでadmin.shopify.comにログイン済みであれば、APIトークンなしでShopifyに商品登録できます。<br>
+          ストアのスラッグ（URLに含まれるID）だけ設定すればOKです。
+        </div>
+      </div>
+      <div class="section-title">Shopify ストア</div>
+      <div class="field">
+        <label>ストアスラッグ</label>
+        <input type="text" id="storeSlug" placeholder="例: y9wpse-tn">
+        <div class="hint">admin.shopify.com/store/<strong>ここの部分</strong>/products</div>
+      </div>
+      <button class="btn btn-check" id="checkBtn">接続を確認</button>
+    </div>
+
+    <!-- 価格・為替設定 -->
+    <div class="card">
+      <div class="section-title">価格設定</div>
+      <div class="field">
+        <label>CNY → JPY レート（目安）</label>
+        <input type="number" id="cnyRate" placeholder="例: 24" value="24">
+        <div class="hint">1元 ≈ 24円（適宜変更してください）</div>
+      </div>
+      <div class="field">
+        <label>管理Web URL</label>
+        <input type="url" id="adminAppUrl" placeholder="https://socora-order-admin.onrender.com" value="https://socora-order-admin.onrender.com">
+        <div class="hint">「管理Webへ保存」で送る先です。RenderのURLが変わった場合だけ変更してください。</div>
+      </div>
+    </div>
+
+    <button class="btn btn-save" id="saveBtn">保存</button>
+    <div class="status" id="status"></div>
+
+    <!-- 管理番号リセット -->
+    <div style="margin-top:24px;padding:16px;background:#1a1a1a;border:1px solid #333;border-radius:8px;">
+      <div style="font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">管理番号カウンター</div>
+      <div id="counterDisplay" style="font-size:13px;color:#ccc;margin-bottom:10px;">次の管理番号: 読込中...</div>
+      <button id="resetCounterBtn" style="padding:8px 16px;background:#3a1a1a;border:1px solid #c0392b;border-radius:6px;color:#e74c3c;font-size:12px;font-family:inherit;cursor:pointer;">S0001からリセット</button>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

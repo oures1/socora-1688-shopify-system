@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "productNoCounter": 0,
+  "products": [],
+  "inventoryChecks": [],
+  "orderItems": [],
+  "orderHistory": [],
+  "autoOrderHistory": [],
+  "shopifyOrders": [],
+  "billingItems": [],
+  "billingImports": []
+}

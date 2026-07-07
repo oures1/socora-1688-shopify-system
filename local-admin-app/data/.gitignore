@@ -1,0 +1,4 @@
+store.json
+exports/
+!.gitignore
+!store.example.json

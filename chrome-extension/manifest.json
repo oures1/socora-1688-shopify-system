@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "SOCORA 1688 / Taobao 商品登録ツール",
+  "version": "1.0.0",
+  "description": "SOCORA用に1688とTaobaoの商品データを取得し、Shopifyへ直接商品登録するツール",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "sidePanel",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://detail.1688.com/*",
+    "https://*.1688.com/*",
+    "https://item.taobao.com/*",
+    "https://*.taobao.com/*",
+    "https://detail.tmall.com/*",
+    "https://*.tmall.com/*",
+    "http://localhost:4877/*",
+    "https://*.onrender.com/*",
+    "https://api.anthropic.com/*",
+    "https://*.myshopify.com/*",
+    "https://admin.shopify.com/*"
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "SOCORA 商品登録ツールを開く"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://detail.1688.com/*",
+        "https://*.1688.com/*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://item.taobao.com/*",
+        "https://*.taobao.com/*",
+        "https://detail.tmall.com/*",
+        "https://*.tmall.com/*"
+      ],
+      "js": [
+        "content-taobao.js"
+      ]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

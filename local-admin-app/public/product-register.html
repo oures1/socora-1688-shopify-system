@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>仕入れ管理へ移動中</title>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const productNo = params.get('productNo') || '';
+    const next = productNo ? `/?productNo=${encodeURIComponent(productNo)}` : '/';
+    location.replace(next);
+  </script>
+</head>
+<body>
+  <p>商品登録画面は使わず、仕入れ管理へ戻ります。</p>
+  <p><a href="/">仕入れ管理を開く</a></p>
+</body>
+</html>

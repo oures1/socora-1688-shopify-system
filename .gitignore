@@ -1,0 +1,9 @@
+.DS_Store
+node_modules/
+.env
+local-admin-app/.env
+local-admin-app/data/store.json
+local-admin-app/data/store.backup*.json
+local-admin-app/data/exports/
+local-admin-app/scripts/__pycache__/
+__pycache__/

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>商品マスター</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=20260603-product-master-simple">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="title-line">
+        <div class="title">商品マスター</div>
+        <span class="mode-badge">発注用</span>
+      </div>
+      <div class="subtitle">Chrome拡張で登録した商品を、発注で使うために管理</div>
+    </div>
+    <nav class="app-tabs" aria-label="画面切り替え">
+      <a class="app-tab active" href="/">仕入れ管理</a>
+      <a class="app-tab" href="/inventory.html">在庫確認</a>
+      <a class="app-tab" href="/orders.html">注文CSV台帳</a>
+    </nav>
+    <div class="top-actions">
+      <button id="btnExportProductMaster" class="ghost" type="button">商品マスタCSV</button>
+      <button id="btnManualProduct" class="ghost secondary-action" type="button" title="Chrome拡張を使わない例外商品を手入力で追加します">手動追加</button>
+      <button id="btnReload" class="ghost">更新</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="filters">
+        <input id="searchInput" type="search" placeholder="管理番号・商品名・仕入れURLで検索">
+        <select id="statusFilter">
+          <option value="">すべて</option>
+          <option value="active">販売中</option>
+          <option value="stopped">販売停止</option>
+        </select>
+        <select id="sortSelect">
+          <option value="registeredDesc">登録日 新しい順</option>
+          <option value="registeredAsc">登録日 古い順</option>
+          <option value="soldDesc">販売数 多い順</option>
+          <option value="soldAsc">販売数 少ない順</option>
+          <option value="productNoAsc">管理番号 小さい順</option>
+          <option value="productNoDesc">管理番号 大きい順</option>
+        </select>
+        <div id="productCount" class="product-count">0件</div>
+      </div>
+      <div id="productList" class="product-list"></div>
+    </aside>
+
+    <section class="main">
+      <section id="emptyState" class="empty">
+        <h1>商品を選択してください</h1>
+        <p>左の商品一覧から選ぶと、仕入れ元データと発注用バリアントを確認できます。</p>
+      </section>
+
+      <section id="detailView" class="hidden">
+        <div class="detail-header">
+          <div>
+            <div class="product-no-line">
+              <span id="detailProductNo" class="product-no"></span>
+              <span id="detailSourceBadge" class="pill source hidden"></span>
+              <span id="detailManualBadge" class="pill manual hidden">手動登録</span>
+              <span id="detailAgeBadge" class="pill"></span>
+            </div>
+            <h1 id="detailTitle"></h1>
+            <div id="detailOriginalTitle" class="muted"></div>
+          </div>
+          <div class="detail-actions">
+            <a id="linkOpenSource" class="ghost" href="#" target="_blank" rel="noopener">仕入れ先で開く</a>
+            <a id="linkOpenProductRegister" class="ghost hidden" href="#" target="_blank" rel="noopener">商品登録で編集</a>
+            <a id="linkOpenShopify" class="ghost" href="#" target="_blank" rel="noopener">Shopifyで開く</a>
+            <button id="btnCopySource" class="ghost">仕入れURLコピー</button>
+            <button id="btnCopyRegistrationData" class="ghost">商品登録データコピー</button>
+          </div>
+        </div>
+
+        <div class="operation-summary" aria-label="商品状態">
+          <div class="operation-row">
+            <span id="summarySaleStatus" class="status-chip"></span>
+            <span id="summaryStageStatus" class="status-chip"></span>
+            <span id="summaryAgeStatus" class="status-chip"></span>
+            <span id="summaryShopifyStatus" class="status-chip"></span>
+          </div>
+          <div class="operation-row">
+            <span id="summaryColorCount" class="status-chip"></span>
+            <span id="summarySkuCount" class="status-chip"></span>
+            <span id="summaryLinkStatus" class="status-chip"></span>
+            <span id="summarySoldCount" class="status-chip"></span>
+          </div>
+        </div>
+
+        <div class="meta-grid simple-meta-grid">
+          <label>管理状態<select id="detailStatus"></select></label>
+          <label>登録日<input id="detailRegisteredAt" type="date"></label>
+          <label>管理用タイトル<input id="detailLocalTitle" type="text"></label>
+          <label>仕入価格（元）<input id="detailCost" type="number" step="0.1"></label>
+          <label>販売価格（円）<input id="detailSalePrice" type="number" step="100"></label>
+          <label>配送重量 / 送料<select id="detailShippingCny">
+            <option value="38" data-weight="0.5">0.5kg / 38元</option>
+            <option value="46" data-weight="1">1kg / 46元</option>
+            <option value="54" data-weight="1.5">1.5kg / 54元</option>
+          </select></label>
+          <label class="wide-field">発注メモ<textarea id="detailMemo" placeholder="必要なときだけメモを入力"></textarea></label>
+        </div>
+        <details class="advanced-product-fields">
+          <summary>リンク・価格詳細</summary>
+          <div class="meta-grid">
+            <label>リンク状態<select id="detailLinkStatus"></select></label>
+            <label>最終確認日<input id="detailLinkCheckedAt" type="date"></label>
+            <label>差し替え候補URL<input id="detailReplacementUrl" type="url"></label>
+            <label>為替レート<input id="detailCnyRate" type="number" step="0.1"></label>
+            <label>手数料（元）<input id="detailFeeCny" type="number" step="0.1" value="6" readonly></label>
+            <a id="linkOpenShopifyAdmin" class="ghost" href="#" target="_blank" rel="noopener">Shopify編集画面を開く</a>
+          </div>
+        </details>
+        <input id="detailSourceUrl" type="hidden">
+        <input id="detailShopifyUrl" type="hidden">
+
+        <div class="profit-strip">
+          <div>
+            <span>販売価格</span>
+            <strong id="profitSalePrice">-</strong>
+          </div>
+          <div>
+            <span>仕入原価</span>
+            <strong id="profitCostJpy">-</strong>
+          </div>
+          <div>
+            <span>送料・手数料</span>
+            <strong id="profitFeesJpy">-</strong>
+            <small id="profitShippingDetail">-</small>
+          </div>
+          <div>
+            <span>利益率</span>
+            <strong id="profitCostRate">-</strong>
+          </div>
+          <div>
+            <span>実利益</span>
+            <strong id="profitAmount">-</strong>
+          </div>
+        </div>
+        <div class="inline-actions">
+          <button id="btnMarkLinkOk" class="ghost">正常</button>
+          <button id="btnMarkLinkBroken" class="ghost">リンク切れ</button>
+          <button id="btnApplyReplacement" class="ghost">差し替え候補URLを仕入れURLへ反映</button>
+        </div>
+
+        <details class="product-sync-panel" aria-labelledby="shopifySyncTitle">
+          <summary>
+            <span>Shopify自動確認</span>
+            <span id="shopifySyncMeta">未照合</span>
+          </summary>
+          <div class="section-head product-sync-head">
+            <div>
+              <h2 id="shopifySyncTitle">Shopify照合</h2>
+              <span>問題がある時だけ開いて確認します。</span>
+            </div>
+          <div class="product-sync-actions">
+              <button id="btnShopifyCreate" class="primary" title="管理システムの内容からShopify商品を直接作成します。会社名タイトルなど危険なデータはサーバー側で停止します。">Shopifyへ直接作成</button>
+              <button id="btnShopifyReconcile" class="ghost" title="Shopifyを読むだけです。管理システムもShopifyも変更しません。">照合（見るだけ）</button>
+              <button id="btnShopifyApply" class="primary" title="Shopifyを正として、管理システム側だけを更新します。Shopify側は変更しません。">Shopifyで上書き</button>
+              <button id="btnShopifyConfirm" class="ghost" title="内容を確認済みにします。データは上書きしません。">確認済みにする</button>
+            </div>
+          </div>
+          <div id="shopifySyncSummary" class="sync-summary"></div>
+          <div id="shopifySyncDiffs" class="sync-diffs"></div>
+        </details>
+
+        <div class="section-head">
+          <div>
+            <h2>バリアント</h2>
+            <span>カラー画像・元カラー・元サイズ・SKUを確認。サンプルや不良交換はここから手動発注できます。</span>
+          </div>
+          <div class="variant-actions">
+            <span id="manualOrderSelectedCount" class="muted">選択 0件</span>
+            <button id="btnSelectAllVariants" class="ghost compact-button" type="button">全選択</button>
+            <button id="btnClearVariantSelection" class="ghost compact-button" type="button">解除</button>
+            <button id="btnDownloadSelectedVariants" class="primary compact-button" type="button" disabled>選択分 Excel</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="variant-table">
+            <thead>
+              <tr>
+                <th>画像</th>
+                <th>元カラー</th>
+                <th>日本語カラー</th>
+                <th>元サイズ</th>
+                <th>日本語サイズ</th>
+                <th>SKU</th>
+                <th>状態</th>
+                <th>手動発注</th>
+              </tr>
+            </thead>
+            <tbody id="variantRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="productRulesModal" class="rules-modal hidden" role="dialog" aria-modal="true" aria-labelledby="productRulesTitle">
+    <button class="rules-backdrop" type="button" data-close-rules aria-label="設定ルールを閉じる"></button>
+    <section class="rules-card">
+      <div class="rules-head">
+        <div>
+          <h2 id="productRulesTitle">仕入れ管理とGoogle Chrome拡張の設定ルール</h2>
+          <p>商品マスター、拡張機能、Shopify照合の役割を忘れないための固定メモです。</p>
+        </div>
+        <button class="ghost" type="button" data-close-rules>閉じる</button>
+      </div>
+      <div class="rules-grid">
+        <article>
+          <h3>仕入れ管理の役割</h3>
+          <ul>
+            <li>ここは商品ごとの仕入れ元URL、原価、送料、手数料、元カラー、元サイズ、SKUを管理する商品マスターです。</li>
+            <li>通常の注文発注は「注文CSV台帳」からBANRI Excelを出力します。</li>
+            <li>仕入れ管理の手動発注は、サンプル、不良交換、単発の追加発注など例外用です。</li>
+          </ul>
+        </article>
+        <article>
+          <h3>Google Chrome拡張から入る情報</h3>
+          <ul>
+            <li>1688/TaobaoのURL、商品ID、原文タイトル、日本語タイトル、画像、バリエーションを登録します。</li>
+            <li>カラーは元カラーと日本語カラーを分けて保存します。中国へ発注するため、元カラーは中国語表記を残します。</li>
+            <li>サイズは元サイズと日本語サイズを分けて保存します。SKUは管理番号、色、サイズの紐づけに使います。</li>
+          </ul>
+        </article>
+        <article>
+          <h3>カラー/サイズ/画像</h3>
+          <ul>
+            <li>バリアント表の画像は発注時に確認するためのカラー画像です。</li>
+            <li>「画像なし」は、拡張機能から画像URLが入っていない、または保存済みURLが見られない状態です。</li>
+            <li>元カラーが日本語や空欄の場合、BANRI発注前の確認で止める対象になります。</li>
+          </ul>
+        </article>
+        <article>
+          <h3>価格と利益計算</h3>
+          <ul>
+            <li>仕入価格は元、販売価格は円で保存します。</li>
+            <li>仕入原価は仕入価格×為替レートで計算します。</li>
+            <li>送料と手数料も元から円換算し、販売価格から引いて利益率と実利益を表示します。</li>
+          </ul>
+        </article>
+        <article>
+          <h3>Shopify照合</h3>
+          <ul>
+            <li>Shopify登録後は、Shopify実データを正として照合します。</li>
+            <li>「Shopify実データを照合」でタイトル、価格、タグ、商品タイプ、画像、SKU、カラー、サイズなどの差分を確認します。</li>
+            <li>問題なければ「Shopifyデータで上書き」または「確認済みにする」で履歴を残します。</li>
+          </ul>
+        </article>
+        <article>
+          <h3>リンク/状態の管理</h3>
+          <ul>
+            <li>管理状態は販売中と販売停止で管理します。</li>
+            <li>リンク状態は正常とリンク切れで管理します。差し替え候補URLがある場合は仕入れURLへ反映できます。</li>
+            <li>商品登録データコピーは、中国語原文・元カラー/元サイズ・SKU・在庫予定・Shopify登録情報を1つにまとめてコピーします。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="/app.js?v=20260603-product-master-simple-collapse"></script>
+</body>
+</html>

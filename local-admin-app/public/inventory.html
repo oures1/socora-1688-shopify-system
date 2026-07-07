@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>在庫確認</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=20260624-inventory-image-fallback">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="title-line">
+        <div class="title">在庫確認</div>
+        <span class="mode-badge">手動確認</span>
+      </div>
+    </div>
+    <nav class="app-tabs" aria-label="画面切り替え">
+      <a class="app-tab" href="/">仕入れ管理</a>
+      <a class="app-tab active" href="/inventory.html">在庫確認</a>
+      <a class="app-tab" href="/orders.html">注文CSV台帳</a>
+    </nav>
+    <div class="top-actions">
+      <button id="btnInventoryStatusRefresh" class="ghost" type="button">Shopify状態を一括確認</button>
+      <button id="btnInventoryBulkApply" class="primary" type="button">一括Shopify反映</button>
+      <button id="btnInventoryExport" class="ghost" type="button">Excel出力</button>
+      <button id="btnInventoryReload" class="ghost" type="button">更新</button>
+    </div>
+  </header>
+
+  <main class="inventory-page">
+    <section class="inventory-summary" aria-label="在庫確認サマリー">
+      <div class="summary-card">
+        <span>対象商品</span>
+        <strong id="summaryTargetCount">0</strong>
+      </div>
+      <div class="summary-card">
+        <span>確認済み</span>
+        <strong id="summaryCheckedCount">0</strong>
+      </div>
+      <div class="summary-card ok">
+        <span>在庫あり</span>
+        <strong id="summaryAvailableCount">0</strong>
+      </div>
+      <div class="summary-card danger">
+        <span>在庫なし</span>
+        <strong id="summaryOutCount">0</strong>
+      </div>
+      <div class="summary-card warn">
+        <span>要確認</span>
+        <strong id="summaryErrorCount">0</strong>
+      </div>
+      <div class="summary-card shopify-warn">
+        <span>Shopify未反映</span>
+        <strong id="summaryUnappliedCount">0</strong>
+      </div>
+      <div class="summary-card danger">
+        <span>24時間超え</span>
+        <strong id="summaryOverdueApplyCount">0</strong>
+      </div>
+    </section>
+
+    <section id="storeSafetyBanner" class="store-safety-banner hidden" aria-live="polite"></section>
+    <section id="shopifyApplyAlert" class="shopify-apply-alert hidden" aria-live="polite"></section>
+
+    <section class="inventory-table-card">
+      <div class="section-head">
+        <div>
+          <h2>商品別の最新在庫</h2>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="inventory-table">
+          <thead>
+            <tr>
+              <th><button class="sort-header" type="button" data-sort="productNo">品番</button></th>
+              <th><button class="sort-header" type="button" data-sort="title">商品</button></th>
+              <th><button class="sort-header" type="button" data-sort="shopify">Shopify</button></th>
+              <th><button class="sort-header" type="button" data-sort="inventory">1688在庫</button></th>
+              <th><button class="sort-header" type="button" data-sort="check">確認状態</button></th>
+              <th><button class="sort-header" type="button" data-sort="stock">在庫数</button></th>
+              <th><button class="sort-header" type="button" data-sort="checkedAt">最終確認</button></th>
+              <th>リンク</th>
+              <th><button class="sort-header" type="button" data-sort="appliedAt">最終反映日</button></th>
+              <th><button class="sort-header" type="button" data-sort="appliedDays">経過</button></th>
+              <th>メモ</th>
+              <th>反映</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/inventory.js?v=20260624-inventory-image-fallback"></script>
+</body>
+</html>

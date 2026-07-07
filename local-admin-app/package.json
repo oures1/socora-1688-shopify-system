@@ -1,0 +1,14 @@
+{
+  "name": "socora-1688-order-admin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SOCORA用に1688/Taobao商品データとShopify注文CSVを管理するWebシステム",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "PORT=4877 node server.js",
+    "check": "node --check server.js && node --check public/app.js && node --check public/orders.js && node --check public/billing.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

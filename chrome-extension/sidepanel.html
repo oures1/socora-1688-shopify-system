@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOCORA 1688 / Taobao</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --surface2: #f7f7f8;
+      --border: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --orange: #111827;
+      --orange-dim: #f7f7f8;
+      --orange-border: #e5e7eb;
+      --green: #087443;
+      --green-dim: #f0fdf4;
+      --red: #b42318;
+      --red-dim: #fef3f2;
+      --blue: #175cd3;
+      --yellow: #854a0e;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 13px;
+      overflow-x: hidden;
+    }
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .logo {
+      width: 32px; height: 32px; border-radius: 6px;
+      background: #111827; color: #fff;
+      font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .header-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .header-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .header-status {
+      display: none; align-items: center; min-height: 18px;
+      padding: 2px 7px; border-radius: 999px;
+      background: var(--green-dim); color: var(--green);
+      font-size: 10px; font-weight: 700; line-height: 1;
+    }
+    .header-status.visible { display: inline-flex; }
+    .header-sub { font-size: 11px; color: var(--muted); line-height: 1.4; }
+    .alert { padding: 9px 16px; font-size: 12px; display: none; }
+    .alert.warn { background: #fffbe6; color: var(--yellow); display: block; }
+    .alert.err  { background: var(--red-dim); color: var(--red); display: block; }
+    .alert.ok   { background: var(--green-dim); color: var(--green); display: block; }
+
+    .source-bar {
+      display: none; align-items: center; gap: 8px;
+      padding: 8px 18px; background: #fafafa;
+      border-bottom: 1px solid var(--border);
+    }
+    .source-bar.visible { display: flex; }
+    .source-url {
+      font-family: 'DM Mono', monospace; font-size: 10px; color: #4b5563;
+      flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .source-link { color: var(--text); font-size: 10px; text-decoration: none; flex-shrink: 0; font-weight: 600; }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 14px 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 57px;
+      z-index: 90;
+    }
+    .mode-tab {
+      min-height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .mode-tab.active {
+      background: #111827;
+      border-color: #111827;
+      color: #fff;
+    }
+    .mode-tab:not(.active):hover { background: var(--surface2); color: var(--text); }
+
+    .content { padding: 18px; max-width: 620px; margin: 0 auto; }
+    #inventoryPanel { padding-bottom: 0; }
+    #productPanel, #confirmPanel, #successPanel { display: none; }
+    .loading { text-align: center; padding: 40px 20px; display: none; }
+    .spinner {
+      width: 30px; height: 30px; border: 2px solid var(--border);
+      border-top-color: var(--orange); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 13px; color: var(--muted); }
+
+    .url-box {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+      padding: 12px 14px; margin-bottom: 14px;
+    }
+    .url-label { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+    .url-text { font-family: 'DM Mono', monospace; font-size: 11px; color: #555; word-break: break-all; line-height: 1.5; }
+
+    .btn-primary, .btn-secondary {
+      border: none; border-radius: 6px; font-weight: 700; cursor: pointer;
+      font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 36px;
+    }
+    .btn-primary { width: 100%; padding: 10px 12px; background: #111827; color: #fff; font-size: 13px; }
+    .btn-primary:hover { background: #1f2937; }
+    .btn-primary:disabled { background: #ccc; color: #888; cursor: default; }
+    .btn-secondary { padding: 8px 12px; background: #fff; color: var(--text); border: 1px solid var(--border); font-size: 13px; }
+    .btn-secondary:hover { background: var(--surface2); }
+    .btn-secondary:disabled { opacity: 0.45; cursor: default; }
+
+    .section { margin-bottom: 22px; }
+    .section-title { font-size: 12px; color: var(--text); font-weight: 700; margin-bottom: 10px; }
+    hr.div { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    .field { margin-bottom: 13px; }
+    .field-label {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--muted); margin-bottom: 6px;
+    }
+    .field-label .hint {
+      font-size: 10px; color: #555; text-transform: none; letter-spacing: 0;
+      background: var(--surface2); padding: 1px 6px; border-radius: 4px;
+    }
+    .field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .field-head .field-label { margin-bottom: 0; }
+    .field-head .section-title { margin-bottom: 0; }
+    .mini-action {
+      border: 1px solid var(--border); background: #fff; color: var(--muted);
+      border-radius: 5px; padding: 3px 8px; font-size: 10px;
+      font-family: inherit; cursor: pointer;
+    }
+    .mini-action:hover { color: var(--text); background: var(--surface2); }
+    .field input, .field textarea, .field select {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 13px;
+      font-family: inherit; padding: 10px 11px; outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: #111827; }
+    .field textarea { min-height: 80px; resize: vertical; }
+    .field select { cursor: pointer; }
+    .custom-select {
+      position: relative;
+      width: 100%;
+    }
+    .custom-select input[type="hidden"] { display: none; }
+    .custom-select-button {
+      width: 100%;
+      min-height: 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      padding: 10px 36px 10px 11px;
+      outline: none;
+      cursor: pointer;
+      text-align: left;
+      position: relative;
+      line-height: 1.35;
+    }
+    .custom-select-button::after {
+      content: "";
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      width: 8px;
+      height: 8px;
+      border-right: 1.5px solid var(--muted);
+      border-bottom: 1.5px solid var(--muted);
+      transform: translateY(-65%) rotate(45deg);
+      pointer-events: none;
+    }
+    .custom-select-button:focus,
+    .custom-select.open .custom-select-button {
+      border-color: #111827;
+    }
+    .custom-select-menu {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      z-index: 1200;
+      max-height: 260px;
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      box-shadow: 0 12px 30px rgba(17, 24, 39, 0.16);
+      padding: 4px;
+    }
+    .custom-select-menu[hidden] { display: none; }
+    .custom-select-option {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      padding: 9px 10px;
+      border-radius: 4px;
+      text-align: left;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .custom-select-option:hover,
+    .custom-select-option:focus {
+      background: #eff6ff;
+      outline: none;
+    }
+    .custom-select-option.selected {
+      background: #dbeafe;
+      font-weight: 700;
+    }
+
+    .variant-row { margin-bottom: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+    .variant-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .variant-label-input {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 5px; color: var(--text); font-size: 12px;
+      font-family: inherit; padding: 4px 8px; outline: none; min-width: 80px;
+    }
+    .variant-cn { font-size: 10px; color: var(--muted); }
+    .variant-value-row { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 2px 0; border-radius: 6px; }
+    .variant-value-row.is-color-row {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) minmax(30px, auto) 24px;
+      align-items: center;
+      column-gap: 8px;
+      row-gap: 3px;
+    }
+    .variant-value-row.is-dragging { opacity: 0.45; }
+    .variant-value-row.drag-over { background: #eef2ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    .variant-drag-handle {
+      width: 22px; height: 28px; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); cursor: grab; user-select: none; flex-shrink: 0;
+      font-size: 15px; line-height: 1;
+    }
+    .variant-drag-handle:active { cursor: grabbing; }
+    .variant-value-original {
+      font-size: 11px; color: var(--muted); flex: 1 1 auto; min-width: 0;
+      line-height: 1.35; overflow: hidden; white-space: nowrap;
+      text-overflow: ellipsis; word-break: normal; overflow-wrap: normal;
+    }
+    .variant-color-select {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 12px;
+      font-family: inherit; padding: 5px 9px; outline: none;
+      width: 174px; max-width: 100%; flex-shrink: 0; cursor: pointer;
+    }
+    .variant-color-field {
+      position: relative;
+      min-width: 0;
+    }
+    .variant-color-button {
+      min-height: 31px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .variant-color-button::after {
+      content: "⌄";
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .variant-color-button.is-empty {
+      color: var(--text);
+      font-weight: 700;
+    }
+    .variant-color-menu {
+      position: absolute;
+      z-index: 80;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      max-height: min(300px, 60vh);
+      overflow: auto;
+      background: #fff;
+      border: 1px solid #cfd5df;
+      border-radius: 6px;
+      box-shadow: 0 12px 30px rgba(17, 24, 39, .18);
+      padding: 4px;
+    }
+    .variant-color-menu.hidden { display: none; }
+    .variant-color-option {
+      width: 100%;
+      min-height: 30px;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 7px;
+      font-family: inherit;
+      font-size: 12px;
+      text-align: left;
+    }
+    .variant-color-option:hover,
+    .variant-color-option.selected {
+      background: #eef2ff;
+    }
+    .variant-value-row.is-color-row .variant-color-select { width: 100%; min-width: 0; }
+    .variant-color-select:focus { border-color: #aaa; }
+    .variant-color-meta {
+      display: inline-flex; align-items: center; gap: 5px;
+      min-width: 20px; flex-shrink: 0; font-size: 10px;
+      color: var(--muted);
+    }
+    .variant-value-row.is-color-row .variant-color-meta { min-width: 20px; }
+    .variant-value-row.is-color-row .variant-value-original {
+      min-width: 0;
+      max-width: 100%;
+      grid-column: 2 / 4;
+      grid-row: 2;
+      color: #6b7280;
+    }
+    .variant-value-row.is-color-row > button { grid-column: 4; grid-row: 1; justify-self: end; }
+    .variant-value-row.is-color-row .variant-stock-badge { grid-column: 2 / 4; grid-row: 3; width: max-content; }
+    .variant-color-swatch {
+      width: 15px; height: 15px; border-radius: 999px;
+      border: 1px solid #cfd5df; box-shadow: inset 0 0 0 1px rgba(255,255,255,.4);
+      background: var(--swatch, #fff);
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 460px) {
+      .variant-value-row.is-color-row {
+        grid-template-columns: 22px minmax(0, 1fr) minmax(46px, auto) 24px;
+      }
+    }
+
+    .price-layout { display: grid; gap: 12px; margin-bottom: 12px; }
+    .price-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .price-row .field, .price-extra { margin-bottom: 0; }
+    @media (max-width: 520px) { .price-row { grid-template-columns: 1fr; } }
+
+    .calc-panel {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      padding: 14px 16px; margin-bottom: 20px;
+    }
+    .calc-head { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+    .calc-title { font-size:11px; font-weight:700; color:var(--green); }
+    .calc-note { font-size:10px; color:#555; background:#f0f0f0; padding:2px 8px; border-radius:3px; margin-left:auto; }
+    .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .price-layout .calc-grid { margin-bottom: 0; }
+    @media (max-width: 520px) { .calc-grid { grid-template-columns: 1fr; } }
+    .mini-label { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+    .calc-input {
+      width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 6px;
+      color: #444; font-size: 12px; font-family: inherit; padding: 8px 10px; outline: none;
+    }
+    .shipping-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .shipping-block { margin-bottom: 0; }
+    .shipping-option {
+      min-height: 42px; border: 1px solid var(--border); border-radius: 6px;
+      background: #fff; color: var(--text); font-family: inherit; font-size: 12px;
+      font-weight: 700; cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2px; padding: 7px 6px;
+    }
+    .shipping-option span { font-size: 10px; color: var(--muted); font-weight: 500; }
+    .shipping-option.active { background: #111827; border-color: #111827; color: #fff; }
+    .shipping-option.active span { color: #fff; opacity: 0.78; }
+    .result-box { background:#fafafa; border:1px solid var(--border); border-radius:6px; padding:12px 14px; }
+    .result-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; }
+    .result-label { font-size:10px; color:#555; margin-bottom:2px; }
+    .result-value { font-size:13px; color:#444; font-weight:500; }
+    .result-big { font-size:18px; font-weight:700; color:var(--green); }
+
+    .collection-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+    .chip-group-label {
+      width: 100%; margin: 5px 0 0; font-size: 10px; font-weight: 800;
+      color: var(--muted); letter-spacing: .03em;
+    }
+    .chip-note {
+      width: 100%; font-size: 10px; color: var(--muted); line-height: 1.5;
+      background: #f8fafc; border: 1px dashed var(--border); border-radius: 6px; padding: 6px 8px;
+    }
+    .col-chip {
+      padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface2); color: var(--muted);
+      transition: all 0.15s;
+    }
+    .col-chip.recommended { border-color:#bfdbfe; background:#eff6ff; color:#1d4ed8; }
+    .col-chip.selected { background: #111827; border-color: #111827; color: #fff; }
+    .option-search {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 12px;
+      font-family: inherit; padding: 8px 10px; outline: none;
+    }
+    .option-search:focus { border-color: #111827; }
+
+    .tags-wrap {
+      min-height: 38px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 5px 8px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+    }
+    .tag-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-size: 11px; display: flex; align-items: center; gap: 4px; }
+    .tag-del { color: var(--muted); cursor: pointer; font-size: 10px; line-height: 1; }
+    .tag-del:hover { color: var(--red); }
+    .tag-input { background: transparent; border: none; color: var(--text); font-size: 12px; font-family: inherit; outline: none; min-width: 80px; padding: 2px 0; }
+    .copy-panel, .log-panel {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 12px; margin-bottom: 16px;
+    }
+    .copy-panel textarea {
+      width: 100%; min-height: 120px; background: #fff; border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 11px; line-height: 1.55;
+      font-family: 'DM Mono', monospace; padding: 9px 10px; resize: vertical; outline: none;
+    }
+    .copy-actions, .quick-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .sync-line { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    .sync-line .mini-action { font-weight:700; color:var(--text); }
+    .sync-status { font-size:10px; color:var(--muted); }
+    .tiny-btn {
+      border: 1px solid var(--border); background: #fff; color: var(--text);
+      border-radius: 6px; padding: 6px 9px; font-size: 11px;
+      font-family: inherit; font-weight: 700; cursor: pointer;
+    }
+    .tiny-btn:hover { background: #f3f4f6; }
+    .confirm-list { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
+    .confirm-row {
+      display: grid; grid-template-columns: 120px 1fr; gap: 10px;
+      padding: 10px 12px; border-bottom: 1px solid var(--border); background: #fff;
+      font-size: 12px; line-height: 1.55;
+    }
+    .confirm-row:last-child { border-bottom: none; }
+    .confirm-label { color: var(--muted); }
+    .confirm-value { color: var(--text); font-weight: 700; word-break: break-word; }
+    .check-status { border-radius: 6px; padding: 9px 11px; font-size: 12px; margin-bottom: 14px; }
+    .check-status.ok { background: var(--green-dim); color: var(--green); }
+    .check-status.warn { background: #fffbe6; color: var(--yellow); }
+    .check-status.err { background: var(--red-dim); color: var(--red); }
+    .log-list { display: flex; flex-direction: column; gap: 7px; margin-top: 8px; }
+    .log-item { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 8px 9px; font-size: 11px; line-height: 1.45; }
+    .log-title { font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .log-meta { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .btn-row .btn-primary, .btn-row .btn-secondary { flex: 1; }
+    @media (max-width: 520px) { .btn-row { flex-direction: column; } }
+
+    #successPanel { text-align: center; padding: 40px 20px; }
+    .success-title { font-size: 17px; font-weight: 700; color: var(--green); margin-bottom: 8px; }
+    .success-note { font-size: 11px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+    .success-link { color: var(--blue); font-size: 13px; text-decoration: none; }
+    .success-actions { display:flex; flex-direction:column; gap:8px; align-items:center; }
+    .inventory-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--surface);
+      margin-bottom: 12px;
+    }
+    .inventory-card h2 {
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .inventory-card p,
+    .inventory-muted {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .inventory-actions {
+      display: grid;
+      gap: 7px;
+      margin-top: 12px;
+    }
+    .inventory-current-line {
+      display: grid;
+      gap: 4px;
+      margin-top: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: #fff;
+    }
+    .inventory-current-line span:first-child {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .inventory-current-line .url-text {
+      font-size: 11px;
+      line-height: 1.45;
+      word-break: break-all;
+    }
+    .inventory-target-list {
+      display: grid;
+      gap: 8px;
+      max-height: none;
+      overflow: visible;
+      padding-right: 2px;
+    }
+    .inventory-target-position {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .inventory-target-picker {
+      display: none;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+    .inventory-target-picker label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .inventory-target-search {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 10px;
+      outline: none;
+    }
+    .inventory-target-search:focus {
+      border-color: #111827;
+    }
+    .inventory-target-options {
+      display: grid;
+      gap: 5px;
+      max-height: 168px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      padding: 5px;
+    }
+    .inventory-target-option {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+      text-align: left;
+      padding: 8px 9px;
+      cursor: pointer;
+    }
+    .inventory-target-option:hover {
+      background: #f8fafc;
+      border-color: var(--border);
+    }
+    .inventory-target-option.active {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: var(--blue);
+    }
+    .inventory-target-option-sub {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 3px;
+    }
+    .inventory-target {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px;
+      display: grid;
+      gap: 4px;
+      background: #fff;
+    }
+    .inventory-target.active {
+      border-color: #111827;
+      background: #f8fafc;
+    }
+    .inventory-target.confirmed {
+      border-color: #22c55e;
+      background: #f0fdf4;
+    }
+    .inventory-target.mismatched {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+    .inventory-target-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .inventory-target-dates {
+      display: grid;
+      gap: 3px;
+      padding: 7px 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.72);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .inventory-target-dates strong {
+      font-size: 11px;
+      color: var(--text);
+    }
+    .inventory-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 20px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      background: #f3f4f6;
+      color: var(--muted);
+    }
+    .inventory-pill.ok { background: var(--green-dim); color: var(--green); }
+    .inventory-pill.warn { background: #fff7ed; color: var(--yellow); }
+    .inventory-pill.danger { background: var(--red-dim); color: var(--red); }
+    .inventory-pill.match { background: var(--green-dim); color: var(--green); border: 1px solid #bbf7d0; }
+    .inventory-pill.mismatch { background: var(--red-dim); color: var(--red); border: 1px solid #fecaca; }
+    .inventory-sku {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .inventory-target strong {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .inventory-target span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .inventory-target-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 7px;
+      margin-top: 4px;
+    }
+    .inventory-target-actions button {
+      width: 100%;
+      min-height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+    .inventory-target-actions button.primary {
+      background: #111827;
+      border-color: #111827;
+      color: #fff;
+    }
+    .inventory-target-actions button:disabled {
+      cursor: not-allowed;
+      background: #d1d5db;
+      border-color: #d1d5db;
+      color: #6b7280;
+    }
+    .inventory-change-list {
+      margin-top: 4px;
+      display: grid;
+      gap: 2px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+    .inventory-status-box {
+      border-radius: 7px;
+      background: var(--surface2);
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      border: 1px solid transparent;
+    }
+    .inventory-status-box.is-html {
+      white-space: normal;
+    }
+    .inventory-save-lines {
+      display: grid;
+      gap: 4px;
+    }
+    .inventory-save-line {
+      line-height: 1.55;
+    }
+    .inventory-save-value-danger {
+      color: var(--red);
+      font-weight: 700;
+    }
+    .inventory-save-value-ok {
+      color: var(--green);
+      font-weight: 700;
+    }
+    .inventory-status-box.tone-ok {
+      background: var(--green-dim);
+      color: var(--green);
+      border-color: #bbf7d0;
+    }
+    .inventory-status-box.tone-danger {
+      background: var(--red-dim);
+      color: var(--red);
+      border-color: #fecaca;
+    }
+    .inventory-status-box.tone-warn {
+      background: #fff7ed;
+      color: var(--yellow);
+      border-color: #fed7aa;
+    }
+    .inventory-status-box.tone-info {
+      background: #eff6ff;
+      color: var(--blue);
+      border-color: #bfdbfe;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">1688</div>
+      <div>
+        <div class="header-title-row">
+          <div class="header-title">SOCORA 1688 / Taobao</div>
+          <span class="header-status" id="headerStatus"></span>
+        </div>
+        <div class="header-sub">SOCORA登録ツール</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mode-switch" aria-label="機能切り替え">
+    <button type="button" class="mode-tab active" id="btnModeRegister" data-tool-mode="register" aria-pressed="true">商品登録</button>
+    <button type="button" class="mode-tab" id="btnModeInventory" data-tool-mode="inventory" aria-pressed="false">在庫確認</button>
+  </div>
+
+  <div class="alert" id="alert"></div>
+
+  <div class="source-bar" id="sourceBar">
+    <span class="source-url" id="sourceUrl"></span>
+    <a class="source-link" id="sourceLink" href="#" target="_blank">開く ↗</a>
+  </div>
+
+  <div class="content" id="startPanel">
+    <div class="url-box">
+      <div class="url-label">現在のページ</div>
+      <div class="url-text" id="currentUrl">読み込み中...</div>
+    </div>
+    <button class="btn-primary" id="btnScrape">商品情報を取得</button>
+  </div>
+
+  <div class="content" id="inventoryPanel" style="display:none">
+    <div class="inventory-card">
+      <h2>在庫確認</h2>
+      <p>現在ページと確認対象が一致した時だけ保存できます。Shopifyには自動反映しません。</p>
+      <div class="inventory-current-line">
+        <span>現在ページ</span>
+        <div class="url-text" id="inventoryCurrentUrl">読み込み中...</div>
+      </div>
+    </div>
+    <div class="inventory-card" id="inventoryTargetsCard">
+      <h2>確認対象</h2>
+      <div class="inventory-target-picker">
+        <label for="inventoryTargetSearch">確認対象を検索・選択</label>
+        <input id="inventoryTargetSearch" class="inventory-target-search" type="search" placeholder="S0001 / 商品名で検索">
+        <div class="inventory-target-options" id="inventoryTargetOptions">対象を読み込み中...</div>
+      </div>
+      <div class="inventory-status-box" id="inventoryStatus">対象商品を読み込んでください。</div>
+      <div class="inventory-target-list" id="inventoryTargetList"></div>
+    </div>
+  </div>
+
+  <div class="content loading" id="loadingPanel">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">商品情報を取得中...</div>
+    <div id="loadingSubText" style="font-size:11px;color:var(--muted);margin-top:4px;min-height:16px;"></div>
+    <div style="margin:20px auto 0;width:100%;max-width:260px;background:var(--surface2);border-radius:8px;height:6px;overflow:hidden">
+      <div id="progressBar" style="height:100%;width:0%;background:var(--orange);border-radius:8px;transition:width 0.35s ease;"></div>
+    </div>
+    <div id="progressText" style="margin-top:8px;font-size:13px;color:var(--orange);font-weight:700;min-height:20px;"></div>
+  </div>
+
+  <div class="content" id="productPanel">
+    <div class="field">
+      <div class="field-label">管理番号 <span class="hint">管理Web・Shopify URL</span></div>
+      <input type="text" id="fProductNo" placeholder="例: s0001">
+    </div>
+
+    <div class="field">
+      <div class="field-label">商品タイトル（日本語）</div>
+      <input type="text" id="fTitle">
+      <div id="titleCnOrig" style="display:none;margin-top:5px;font-size:10px;color:#777;font-family:'DM Mono',monospace;line-height:1.5;padding:5px 8px;background:#f7f7f7;border-radius:4px;border:1px solid #e0e0e0;word-break:break-all;"></div>
+    </div>
+
+    <div class="copy-panel" style="display:none">
+      <div class="field-head">
+        <div class="section-title" style="margin-bottom:0">元データ・商品情報コピー</div>
+        <button type="button" class="tiny-btn" id="btnRefreshCombinedSource">更新</button>
+      </div>
+      <textarea id="combinedSourceText" readonly placeholder="1688/Taobaoの原文と登録用まとめを1つにまとめて表示します"></textarea>
+      <div class="copy-actions">
+        <button type="button" class="tiny-btn" id="btnCopyCombinedSource">まとめてコピー</button>
+        <button type="button" class="tiny-btn" id="btnDownloadCombinedSource">TXTダウンロード</button>
+      </div>
+    </div>
+
+    <hr class="div">
+
+    <div class="section">
+      <div class="section-title">バリアント（クリックで編集）</div>
+      <div id="variantsContainer"></div>
+    </div>
+
+    <hr class="div">
+
+    <div class="calc-panel">
+      <div class="calc-head">
+        <span class="calc-title">価格 / 利益計算</span>
+        <span class="calc-note">利益計算のみ反映されません</span>
+      </div>
+      <div class="price-layout">
+        <div class="price-row">
+          <div class="field">
+            <div class="field-label">仕入原価（元 / CNY）</div>
+            <input type="number" id="fCostCny" step="0.1">
+          </div>
+          <div class="field">
+            <div class="field-label">販売価格（円）</div>
+            <input type="number" id="fPriceJpy">
+          </div>
+        </div>
+        <div class="shipping-block">
+          <div class="mini-label">配送重量 / 配送料</div>
+          <input type="hidden" id="fShipping" value="38">
+          <div class="shipping-options" id="shippingOptions">
+            <button type="button" class="shipping-option active" data-shipping="38">0.5kg<span>38元</span></button>
+            <button type="button" class="shipping-option" data-shipping="46">1kg<span>46元</span></button>
+            <button type="button" class="shipping-option" data-shipping="54">1.5kg<span>54元</span></button>
+          </div>
+        </div>
+        <div class="calc-grid">
+          <div><div class="mini-label">為替レート（1元＝円）</div><input class="calc-input" type="number" id="fCnyRate" value="24" step="0.1"></div>
+          <div><div class="mini-label">手数料（元）</div><input class="calc-input" type="number" id="fFee" value="6" step="1" readonly></div>
+        </div>
+        <div class="field price-extra">
+          <div class="field-label">割引前価格（定価） <span class="hint">任意</span></div>
+          <input type="number" id="fComparePriceJpy" placeholder="販売価格より高い金額">
+        </div>
+      </div>
+      <div class="result-box" id="profitResult">
+        <div class="result-grid">
+          <div><div class="result-label">仕入原価（円換算）</div><div class="result-value" id="pCostJpy">-</div></div>
+          <div><div class="result-label">原価合計（円換算）</div><div class="result-value" id="pTotalCost">-</div></div>
+        </div>
+        <div style="border-top:1px solid #b8dfc6;margin:10px 0 8px;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div><div class="result-label">純利益</div><div class="result-big" id="pProfit">-</div></div>
+          <div style="text-align:right;"><div class="result-label">利益率</div><div class="result-big" id="pMargin">-</div></div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="div">
+
+    <div class="section">
+      <div class="field-head">
+        <div class="section-title" style="margin-bottom:0">Shopify項目</div>
+        <button type="button" class="tiny-btn" id="btnApplyLastInputs">前回設定を反映</button>
+      </div>
+      <div class="sync-line">
+        <button type="button" class="mini-action" id="btnSyncShopifyCandidates">Shopify候補を同期</button>
+        <span class="sync-status" id="shopifyCandidateSyncStatus">未同期</span>
+      </div>
+      <div class="field">
+        <div class="field-label">公開ステータス</div>
+        <div class="custom-select" data-custom-select="fStatus">
+          <input type="hidden" id="fStatus" value="active">
+          <button type="button" class="custom-select-button" id="fStatusButton" aria-haspopup="listbox" aria-expanded="false" aria-controls="fStatusMenu">公開（すぐに販売開始）</button>
+          <div class="custom-select-menu" id="fStatusMenu" role="listbox" hidden></div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">商品タイプ / カテゴリ <span class="hint">自動選択済み・変更可</span></div>
+        <div class="custom-select" data-custom-select="fProductType">
+          <input type="hidden" id="fProductType" value="その他">
+          <button type="button" class="custom-select-button" id="fProductTypeButton" aria-haspopup="listbox" aria-expanded="false" aria-controls="fProductTypeMenu">その他</button>
+          <div class="custom-select-menu" id="fProductTypeMenu" role="listbox" hidden></div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">販売元（ブランド）</div>
+        <input type="text" id="fVendor" value="socora" list="vendorOptions">
+        <datalist id="vendorOptions"></datalist>
+      </div>
+      <div class="field">
+        <div class="field-head">
+          <div class="field-label">コレクション <span class="hint">Shopify候補</span></div>
+          <button type="button" class="mini-action" id="btnReloadCollections">更新</button>
+        </div>
+        <input type="text" class="option-search" id="collectionSearch" placeholder="コレクションを検索">
+        <div class="collection-chips" id="collectionOptions"><span style="color:var(--muted);font-size:11px">読み込み中...</span></div>
+      </div>
+      <div class="field">
+        <div class="field-head">
+          <div class="field-label">タグ <span class="hint">Shopify候補</span></div>
+          <button type="button" class="mini-action" id="btnReloadTags">更新</button>
+        </div>
+        <input type="text" class="option-search" id="shopifyTagSearch" placeholder="タグ候補を検索">
+        <div class="collection-chips" id="shopifyTagChips"><span style="color:var(--muted);font-size:11px">読み込み中...</span></div>
+        <div class="quick-actions">
+          <button type="button" class="tiny-btn" data-tag-set="ladies">レディース基本</button>
+          <button type="button" class="tiny-btn" data-tag-set="unisex">ユニセックス基本</button>
+          <button type="button" class="tiny-btn" data-tag-set="ranking">ランキング</button>
+          <button type="button" class="tiny-btn" data-tag-set="uv">UVカット</button>
+          <button type="button" class="tiny-btn" data-tag-set="clear">タグクリア</button>
+        </div>
+        <div style="margin-top:8px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">選択中 / 追加タグ</div>
+          <div class="tags-wrap" id="tagsContainer" onclick="document.getElementById('tagInput').focus()">
+            <input type="text" class="tag-input" id="tagInput" placeholder="カスタムタグを入力してEnter...">
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">在庫数（各バリアント）</div>
+        <input type="number" id="fInventory" value="100">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" id="btnReset">やり直す</button>
+      <button class="btn-secondary" id="btnBulkDownload" style="border-color:var(--orange);color:var(--orange);">原文DL</button>
+      <button class="btn-primary" id="btnRegister">Shopifyへ直接登録</button>
+    </div>
+  </div>
+
+  <div class="content" id="confirmPanel">
+    <div class="section-title">Shopifyへ直接登録</div>
+    <div id="duplicateStatus" class="check-status warn">管理Webへ保存して、そのままShopifyへ登録します</div>
+    <div class="confirm-list" id="confirmSummary"></div>
+    <div class="copy-panel" style="display:none">
+      <div class="field-head">
+        <div class="section-title" style="margin-bottom:0">元データ・商品情報コピー</div>
+      </div>
+      <textarea id="confirmCombinedSourceText" readonly></textarea>
+      <div class="copy-actions">
+        <button type="button" class="tiny-btn" id="btnCopyConfirmCombinedSource">まとめてコピー</button>
+        <button type="button" class="tiny-btn" id="btnDownloadConfirmCombinedSource">TXTダウンロード</button>
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text);margin:8px 0 14px;">
+      <input type="checkbox" id="openAfterRegister" checked style="width:auto;">
+      登録後にShopify編集画面を開く
+    </label>
+    <div class="btn-row">
+      <button class="btn-secondary" id="btnBackToEdit">戻って修正</button>
+      <button class="btn-primary" id="btnConfirmRegister">Shopifyへ登録</button>
+    </div>
+  </div>
+
+  <div class="content" id="successPanel">
+    <div class="success-title">Shopify登録完了</div>
+    <div class="success-note">取得データを管理Webへ保存し、Shopifyへ商品を作成しました。必要な修正はShopify編集画面で行ってください。</div>
+    <div class="success-actions">
+      <a class="success-link" id="shopifyLink" href="#" target="_blank">Shopify編集画面を開く →</a>
+      <a class="success-link" id="adminWebLink" href="#" target="_blank">仕入れ管理で開く →</a>
+    </div>
+    <div class="copy-panel" style="text-align:left;margin-top:18px;">
+      <div class="field-head">
+        <div class="section-title" style="margin-bottom:0">元データ・商品情報コピー</div>
+      </div>
+      <textarea id="successCombinedSourceText" readonly></textarea>
+      <div class="copy-actions">
+        <button type="button" class="tiny-btn" id="btnCopySuccessCombinedSource">まとめてコピー</button>
+        <button type="button" class="tiny-btn" id="btnDownloadSuccessCombinedSource">TXTダウンロード</button>
+      </div>
+    </div>
+    <br><br>
+    <button class="btn-secondary" id="btnRegisterAnother" style="margin:0 auto">別の商品を登録</button>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
